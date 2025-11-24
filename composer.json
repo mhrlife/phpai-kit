@@ -1,0 +1,46 @@
+{
+  "name": "mhrlife/phpai-kit",
+  "description": "PHP library for OpenAI communication with advanced tool function support",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Mhrlife\\PhpaiKit\\": "src/"
+    },
+    "files": [
+      "src/create_agent.php",
+      "src/Callbacks/langfuse_helpers.php"
+    ]
+  },
+  "authors": [
+    {
+      "name": "Mohammad Hoseinirad",
+      "email": "gammerlucky@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.1",
+    "openai-php/client": "^0.18.0",
+    "guzzlehttp/guzzle": "^7.10",
+    "open-telemetry/sdk": "^1.9",
+    "open-telemetry/exporter-otlp": "^1.3",
+    "open-telemetry/api": "^1.7",
+    "php-http/guzzle7-adapter": "^1.1"
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true,
+      "tbachert/spi": true
+    }
+  },
+  "scripts": {
+    "test": "php tests/run_all_tests.php",
+    "lint": "phpstan analyse",
+    "format": "php-cs-fixer fix",
+    "format:check": "php-cs-fixer fix --dry-run --diff"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1",
+    "friendsofphp/php-cs-fixer": "^3.90"
+  }
+}
