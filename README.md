@@ -114,8 +114,39 @@ class SearchParams {
 - Scalar types: `string`, `int`, `float`, `bool`
 - Arrays with PHPDoc: `array<Type>`, `Type[]`
 - Nested objects: Any class type
+- Enums: String and integer-backed enums
 - Union types: `string|int`
 - Nullable types: `?string`, `string|null`
+
+**Enum Support:**
+
+The library automatically extracts enum values for OpenAI schema constraints:
+
+```php
+enum Status: string {
+    case PENDING = 'pending';
+    case ACTIVE = 'active';
+    case INACTIVE = 'inactive';
+}
+
+class TaskParams {
+    public string $title;
+    public Status $status;          // Enum values are extracted as constraints
+}
+```
+
+Generates schema with enum constraint:
+```json
+{
+    "type": "object",
+    "properties": {
+        "status": {
+            "type": "string",
+            "enum": ["pending", "active", "inactive"]
+        }
+    }
+}
+```
 
 ### Structured Output
 
