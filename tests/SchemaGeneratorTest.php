@@ -116,4 +116,77 @@ $test->assertTrue(in_array('required', $schema['required']), 'Required should be
 $test->assertFalse(in_array('optional', $schema['required']), 'Optional should not be required');
 $test->assertFalse(in_array('count', $schema['required']), 'Count should not be required');
 
+// Test string enum
+enum StatusEnum: string
+{
+    case PENDING = 'pending';
+    case ACTIVE = 'active';
+    case INACTIVE = 'inactive';
+}
+
+class ClassWithStringEnum
+{
+    public StatusEnum $status;
+}
+
+$schema = SchemaGenerator::generate(ClassWithStringEnum::class);
+
+$test->assertTrue(isset($schema['properties']['status']), 'Schema should have status property');
+$test->assertEquals('string', $schema['properties']['status']['type'], 'Status should be string type');
+$test->assertTrue(isset($schema['properties']['status']['enum']), 'Status should have enum values');
+$test->assertEquals(['pending', 'active', 'inactive'], $schema['properties']['status']['enum'], 'Enum values should match');
+
+// Test int enum
+enum PriorityEnum: int
+{
+    case LOW = 1;
+    case MEDIUM = 2;
+    case HIGH = 3;
+}
+
+class ClassWithIntEnum
+{
+    public PriorityEnum $priority;
+}
+
+$schema = SchemaGenerator::generate(ClassWithIntEnum::class);
+
+$test->assertTrue(isset($schema['properties']['priority']), 'Schema should have priority property');
+$test->assertEquals('integer', $schema['properties']['priority']['type'], 'Priority should be integer type');
+$test->assertTrue(isset($schema['properties']['priority']['enum']), 'Priority should have enum values');
+$test->assertEquals([1, 2, 3], $schema['properties']['priority']['enum'], 'Enum values should match');
+
+// Test nullable enum
+class ClassWithNullableEnum
+{
+    public ?StatusEnum $status = null;
+}
+
+$schema = SchemaGenerator::generate(ClassWithNullableEnum::class);
+
+$test->assertTrue(isset($schema['properties']['status']), 'Schema should have status property');
+$test->assertEquals('string', $schema['properties']['status']['type'], 'Status should be string type');
+$test->assertTrue(isset($schema['properties']['status']['nullable']), 'Status should be nullable');
+$test->assertTrue($schema['properties']['status']['nullable'], 'Nullable should be true');
+
+// Test pure enum (no backing type)
+enum ColorEnum
+{
+    case RED;
+    case GREEN;
+    case BLUE;
+}
+
+class ClassWithPureEnum
+{
+    public ColorEnum $color;
+}
+
+$schema = SchemaGenerator::generate(ClassWithPureEnum::class);
+
+$test->assertTrue(isset($schema['properties']['color']), 'Schema should have color property');
+$test->assertEquals('string', $schema['properties']['color']['type'], 'Color should be string type');
+$test->assertTrue(isset($schema['properties']['color']['enum']), 'Color should have enum values');
+$test->assertEquals(['RED', 'GREEN', 'BLUE'], $schema['properties']['color']['enum'], 'Pure enum case names should be enum values');
+
 $test->report();

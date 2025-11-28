@@ -63,6 +63,19 @@ class SchemaGenerator
         $type = $property->getType();
         $schema = TypeMapper::toJsonSchemaType($type);
 
+        // Check if the type is an enum
+        if ($type !== null && method_exists($type, 'getName')) {
+            $typeName = $type->getName();
+            $enumSchema = TypeMapper::getEnumSchema($typeName);
+            if ($enumSchema !== null) {
+                $schema = $enumSchema;
+                // Preserve nullable if it was in the original type
+                if ($type->allowsNull()) {
+                    $schema['nullable'] = true;
+                }
+            }
+        }
+
         // Try to enhance with PHPDoc information
         $docComment = $property->getDocComment();
         if ($docComment !== false) {
@@ -82,7 +95,7 @@ class SchemaGenerator
         // If the type is a class (object), recursively generate its schema
         if (isset($schema['type']) && $schema['type'] === 'object' && $type !== null) {
             $typeName = method_exists($type, 'getName') ? $type->getName() : null;
-            if ($typeName !== null && class_exists($typeName)) {
+            if ($typeName !== null && class_exists($typeName) && !enum_exists($typeName)) {
                 $schema = self::generate($typeName);
             }
         }

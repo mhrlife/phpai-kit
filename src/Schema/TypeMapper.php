@@ -8,6 +8,7 @@ use ReflectionIntersectionType;
 use ReflectionNamedType;
 use ReflectionType;
 use ReflectionUnionType;
+use ReflectionEnum;
 
 class TypeMapper
 {
@@ -97,6 +98,51 @@ class TypeMapper
             'object', 'mixed' => 'object',
             default => 'object', // Assume classes are objects
         };
+    }
+
+    /**
+     * Check if a type is an enum and extract its schema
+     *
+     * @param string $typeName
+     * @return array{type: string, enum?: array, nullable?: bool}|null
+     */
+    public static function getEnumSchema(string $typeName): ?array
+    {
+        if (!enum_exists($typeName)) {
+            return null;
+        }
+
+        try {
+            $reflection = new ReflectionEnum($typeName);
+            $cases = $reflection->getCases();
+
+            if (empty($cases)) {
+                return null;
+            }
+
+            // Check if it's a backed enum (string or int)
+            $backingType = $reflection->getBackingType();
+            if ($backingType === null) {
+                // Pure enum - extract case names
+                $values = array_map(fn($case) => $case->getName(), $cases);
+                return ['type' => 'string', 'enum' => $values];
+            }
+
+            $backingTypeName = $backingType->getName();
+            if ($backingTypeName === 'string') {
+                $values = array_map(fn($case) => $case->getBackingValue(), $cases);
+                return ['type' => 'string', 'enum' => $values];
+            }
+
+            if ($backingTypeName === 'int') {
+                $values = array_map(fn($case) => $case->getBackingValue(), $cases);
+                return ['type' => 'integer', 'enum' => $values];
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
