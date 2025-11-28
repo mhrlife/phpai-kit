@@ -167,4 +167,99 @@ $result = $executor->execute('complex_tool', [
 
 $test->assertEquals('John is 30 years old with 3 tags', $result, 'Should handle complex parameter types');
 
+// Test enum conversion from string (backed enum)
+enum StatusEnum: string
+{
+    case PENDING = 'pending';
+    case ACTIVE = 'active';
+    case INACTIVE = 'inactive';
+}
+
+class EnumParams
+{
+    public StatusEnum $status;
+    public string $name;
+}
+
+#[Tool("enum_tool", "Tool with enum parameters")]
+function enumTool(EnumParams $params): string
+{
+    return sprintf("%s is %s", $params->name, $params->status->value);
+}
+
+$registry->register(enumTool(...));
+
+// Test string enum conversion
+$result = $executor->execute('enum_tool', [
+    'status' => 'active',
+    'name' => 'Test',
+]);
+
+$test->assertEquals('Test is active', $result, 'Should convert string to backed enum');
+
+// Test different enum value
+$result = $executor->execute('enum_tool', [
+    'status' => 'pending',
+    'name' => 'Work',
+]);
+
+$test->assertEquals('Work is pending', $result, 'Should convert different enum value');
+
+// Test int enum
+enum PriorityEnum: int
+{
+    case LOW = 1;
+    case MEDIUM = 2;
+    case HIGH = 3;
+}
+
+class IntEnumParams
+{
+    public PriorityEnum $priority;
+    public string $task;
+}
+
+#[Tool("priority_tool", "Tool with int enum")]
+function priorityTool(IntEnumParams $params): string
+{
+    return sprintf("%s priority: %d", $params->task, $params->priority->value);
+}
+
+$registry->register(priorityTool(...));
+
+$result = $executor->execute('priority_tool', [
+    'priority' => 2,
+    'task' => 'Review',
+]);
+
+$test->assertEquals('Review priority: 2', $result, 'Should convert int to int-backed enum');
+
+// Test pure enum (no backing type)
+enum ColorEnum
+{
+    case RED;
+    case GREEN;
+    case BLUE;
+}
+
+class PureEnumParams
+{
+    public ColorEnum $color;
+}
+
+#[Tool("color_tool", "Tool with pure enum")]
+function colorTool(PureEnumParams $params): string
+{
+    return $params->color->name;
+}
+
+$registry->register(colorTool(...));
+
+// Pure enums use case names as values
+$result = $executor->execute('color_tool', [
+    'color' => 'RED',
+]);
+
+$test->assertEquals('RED', $result, 'Should convert string to pure enum case');
+
 $test->report();

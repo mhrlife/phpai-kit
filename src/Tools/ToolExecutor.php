@@ -72,9 +72,39 @@ class ToolExecutor
         // Create instance and populate properties
         try {
             $instance = new $className();
+            $classReflection = new \ReflectionClass($className);
 
             foreach ($arguments as $key => $value) {
                 if (property_exists($instance, $key)) {
+                    $property = $classReflection->getProperty($key);
+                    $propertyType = $property->getType();
+
+                    // Handle enum conversion
+                    if ($propertyType !== null && method_exists($propertyType, 'getName')) {
+                        $typeName = $propertyType->getName();
+                        if (enum_exists($typeName)) {
+                            $enumReflection = new \ReflectionEnum($typeName);
+                            $backingType = $enumReflection->getBackingType();
+
+                            // Handle backed enums (string or int)
+                            if ($backingType !== null && (is_string($value) || is_int($value))) {
+                                $instance->$key = $typeName::from($value);
+                                continue;
+                            }
+
+                            // Handle pure enums (use case name)
+                            if ($backingType === null && is_string($value)) {
+                                foreach ($enumReflection->getCases() as $case) {
+                                    if ($case->getName() === $value) {
+                                        $instance->$key = $case->getValue();
+                                        break;
+                                    }
+                                }
+                                continue;
+                            }
+                        }
+                    }
+
                     $instance->$key = $value;
                 }
             }
