@@ -26,10 +26,11 @@ class LangfuseCallback implements AgentCallback
 
     public function __construct(
         private readonly TracerProviderInterface $tracerProvider,
-        private readonly string $serviceName = 'phpai-kit',
-        ?string $traceId = null,
-        ?Context $parentContext = null
-    ) {
+        private readonly string                  $serviceName = 'phpai-kit',
+        ?string                                  $traceId = null,
+        ?Context                                 $parentContext = null
+    )
+    {
         // Create trace span
         $this->initializeTrace($traceId, $parentContext);
     }
@@ -58,7 +59,8 @@ class LangfuseCallback implements AgentCallback
         );
 
         // Attach the context to make it current using ContextStorage
-        $this->traceContextToken = Context::storage()->attach($this->traceContext);
+        $this->traceContextToken = Context::storage()
+            ->attach($this->traceContext);
 
         // Store trace ID if provided
         if ($traceId !== null) {
@@ -77,7 +79,8 @@ class LangfuseCallback implements AgentCallback
 
         // Store root span context and attach it (like Python's _attach_observation)
         $this->rootSpanContext = $this->rootSpan->storeInContext(Context::getCurrent());
-        $this->rootContextToken = Context::storage()->attach($this->rootSpanContext);
+        $this->rootContextToken = Context::storage()
+            ->attach($this->rootSpanContext);
 
         $this->rootSpan->setAttribute('langfuse.observation.model.name', $context['model']);
         $this->rootSpan->setAttribute('langfuse.observation.input', json_encode($context['input']));
@@ -145,25 +148,13 @@ class LangfuseCallback implements AgentCallback
         $this->currentGenerationSpan->setAttribute('finish_reason', $context['finish_reason']);
 
         // Build complete output including tool calls if present
-        $output = [];
+        $output = [
+            'role' => 'assistant',
+            'content' => $context['content'],
+            'tool_calls' => $context['tool_calls'] ?? [],
+        ];
 
-        if (!empty($context['content'])) {
-            $output['content'] = $context['content'];
-        }
-
-        // Add tool calls to output if present
         if (!empty($context['tool_calls'])) {
-            $output['tool_calls'] = array_map(function ($toolCall) {
-                return [
-                    'id' => $toolCall->id,
-                    'type' => $toolCall->type,
-                    'function' => [
-                        'name' => $toolCall->function->name,
-                        'arguments' => $toolCall->function->arguments,
-                    ],
-                ];
-            }, $context['tool_calls']);
-
             $this->currentGenerationSpan->setAttribute('has_tool_calls', true);
             $this->currentGenerationSpan->setAttribute('tool_calls_count', count($context['tool_calls']));
         }
