@@ -165,4 +165,19 @@ class LangfuseCallback implements AgentCallback
             );
         }
     }
+
+    /**
+     * Cleanup on destruction to prevent scope leaks
+     * This ensures all OpenTelemetry scopes are properly detached even if
+     * the callback is destroyed before onRunEnd/onError is called.
+     */
+    public function __destruct()
+    {
+        if (isset($this->spanManager) && $this->spanManager->getDepth() > 0) {
+            try {
+                $this->spanManager->cleanupAll();
+            } catch (\Throwable $e) {
+            }
+        }
+    }
 }
