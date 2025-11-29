@@ -41,13 +41,17 @@ class LangfuseHelper
 
         $authString = base64_encode($publicKey . ':' . $secretKey);
 
-        $transport = (new OtlpHttpTransportFactory())->create(
+        $innerTransport = (new OtlpHttpTransportFactory())->create(
             $endpoint,
             'application/x-protobuf',
             ['Authorization' => 'Basic ' . $authString]
         );
 
+        // Wrap transport to ignore JSON responses from Langfuse
+        // Langfuse accepts protobuf but returns JSON, causing parsing errors
+        $transport = new LangfuseTransportWrapper($innerTransport);
         $exporter = new SpanExporter($transport);
+
         $clock = ClockFactory::getDefault();
 
         // Use BatchSpanProcessor for efficient trace export
