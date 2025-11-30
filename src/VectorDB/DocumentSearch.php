@@ -12,10 +12,12 @@ class DocumentSearch
     /**
      * @param string $query Search query text
      * @param int $topK Number of results to return
+     * @param array<Filter> $filters Search filters
      */
     public function __construct(
         public string $query,
-        public int $topK
+        public int $topK,
+        public array $filters = []
     ) {
     }
 }

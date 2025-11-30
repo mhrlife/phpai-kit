@@ -73,6 +73,16 @@ class RedisVectorDB implements Client
             )
         ];
 
+        // Add filterable fields to schema
+        foreach ($config->filterableFields as $field) {
+            $fieldName = 'meta_' . $field->name;
+            $schema[] = match ($field->type) {
+                FilterFieldType::Text => new TextField($fieldName),
+                FilterFieldType::Tag => new TagField($fieldName),
+                FilterFieldType::Numeric => new \Predis\Command\Argument\Search\SchemaFields\NumericField($fieldName),
+            };
+        }
+
         // Create index with HASH storage
         try {
             $this->client->ftcreate(
@@ -138,13 +148,23 @@ class RedisVectorDB implements Client
             // Convert to float32 and encode as binary
             $binaryEmbedding = $this->encodeVector($embedding);
 
-            // Store document with embedding
-            $pipe->hmset($key, [
+            // Prepare document data
+            $docData = [
                 'id' => $doc->id,
                 'content' => $doc->content,
                 'metadata' => json_encode($doc->meta),
                 'embedding' => $binaryEmbedding,
-            ]);
+            ];
+
+            // Add filterable metadata fields with meta_ prefix
+            foreach ($this->indexConfig->filterableFields as $field) {
+                if (isset($doc->meta[$field->name])) {
+                    $docData['meta_' . $field->name] = $doc->meta[$field->name];
+                }
+            }
+
+            // Store document with embedding
+            $pipe->hmset($key, $docData);
         }
 
         $pipe->execute();
@@ -209,11 +229,17 @@ class RedisVectorDB implements Client
         // Encode query vector as binary
         $binaryQuery = $this->encodeVector($queryVector);
 
+        // Build filter prefix
+        $filterPrefix = '*';
+        if (!empty($search->filters)) {
+            $filterPrefix = $this->buildFilterQuery($search->filters);
+        }
+
         // Perform KNN search using Predis
         try {
             $result = $this->client->ftsearch(
                 $this->index,
-                "*=>[KNN {$search->topK} @embedding \$vec AS score]",
+                "{$filterPrefix}=>[KNN {$search->topK} @embedding \$vec AS score]",
                 (new SearchArguments())
                     ->addReturn(4, 'id', 'content', 'metadata', 'score')
                     ->dialect('2')
@@ -282,5 +308,110 @@ class RedisVectorDB implements Client
         }
 
         return $documents;
+    }
+
+    /**
+     * Build Redis Search filter query from filters
+     *
+     * @param array<Filter> $filters
+     */
+    private function buildFilterQuery(array $filters): string
+    {
+        if (empty($filters)) {
+            return '*';
+        }
+
+        $parts = [];
+        foreach ($filters as $filter) {
+            $fieldName = 'meta_' . $filter->field;
+            $part = '';
+
+            switch ($filter->operator) {
+                case FilterOp::Eq:
+                    // Tag exact match: @field:{value}
+                    $part = sprintf('@%s:{%s}', $fieldName, $this->escapeTagValue($filter->value));
+                    break;
+
+                case FilterOp::In:
+                    // Tag in list: @field:{val1|val2|val3}
+                    if (is_array($filter->value)) {
+                        $escaped = array_map(fn($v) => $this->escapeTagValue($v), $filter->value);
+                        $part = sprintf('@%s:{%s}', $fieldName, implode('|', $escaped));
+                    }
+                    break;
+
+                case FilterOp::Contains:
+                    // Text contains: @field:value
+                    $part = sprintf('@%s:%s', $fieldName, $filter->value);
+                    break;
+
+                case FilterOp::Range:
+                    // Numeric range: @field:[min max]
+                    if ($filter->value instanceof NumericRange) {
+                        $part = sprintf('@%s:[%s %s]', $fieldName, $filter->value->min, $filter->value->max);
+                    }
+                    break;
+
+                case FilterOp::Gte:
+                    // Numeric >=: @field:[value +inf]
+                    $part = sprintf('@%s:[%s +inf]', $fieldName, $filter->value);
+                    break;
+
+                case FilterOp::Lte:
+                    // Numeric <=: @field:[-inf value]
+                    $part = sprintf('@%s:[-inf %s]', $fieldName, $filter->value);
+                    break;
+            }
+
+            if ($part !== '') {
+                $parts[] = $part;
+            }
+        }
+
+        if (empty($parts)) {
+            return '*';
+        }
+
+        // Combine with AND (space separated in Redis Search)
+        return '(' . implode(' ', $parts) . ')';
+    }
+
+    /**
+     * Escape special characters in tag values for Redis Search
+     */
+    private function escapeTagValue(mixed $value): string
+    {
+        $s = (string) $value;
+        // Escape special characters in Redis Search tag syntax
+        $replacements = [
+            ',' => '\\,',
+            '.' => '\\.',
+            '<' => '\\<',
+            '>' => '\\>',
+            '{' => '\\{',
+            '}' => '\\}',
+            '[' => '\\[',
+            ']' => '\\]',
+            '"' => '\\"',
+            "'" => "\\'",
+            ':' => '\\:',
+            ';' => '\\;',
+            '!' => '\\!',
+            '@' => '\\@',
+            '#' => '\\#',
+            '$' => '\\$',
+            '%' => '\\%',
+            '^' => '\\^',
+            '&' => '\\&',
+            '*' => '\\*',
+            '(' => '\\(',
+            ')' => '\\)',
+            '-' => '\\-',
+            '+' => '\\+',
+            '=' => '\\=',
+            '~' => '\\~',
+            ' ' => '\\ ',
+        ];
+        return strtr($s, $replacements);
     }
 }

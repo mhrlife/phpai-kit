@@ -12,10 +12,12 @@ class IndexConfig
     /**
      * @param int $dimensions Vector dimensions (e.g., 1536 for text-embedding-3-small)
      * @param string $distanceMetric Distance metric: "COSINE", "L2", or "IP"
+     * @param array<FilterableField> $filterableFields Metadata fields that can be filtered
      */
     public function __construct(
         public int $dimensions,
-        public string $distanceMetric = 'COSINE'
+        public string $distanceMetric = 'COSINE',
+        public array $filterableFields = []
     ) {
     }
 }
