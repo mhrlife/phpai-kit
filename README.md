@@ -332,6 +332,65 @@ try {
 }
 ```
 
+## Vector Database with Filtering
+
+Store and search documents using vector embeddings with Redis:
+
+```php
+use Mhrlife\PhpaiKit\VectorDB\{
+    RedisVectorDB, Document, DocumentSearch, IndexConfig,
+    Filter, FilterOp, FilterableField, FilterFieldType, NumericRange
+};
+
+// Create vector DB with filterable fields
+$vectorDB = new RedisVectorDB('my_index', $embeddingClient, $redis);
+$vectorDB->createIndex(new IndexConfig(
+    dimensions: 1536,
+    distanceMetric: 'COSINE',
+    filterableFields: [
+        new FilterableField('category', FilterFieldType::Tag),
+        new FilterableField('year', FilterFieldType::Numeric),
+    ]
+));
+
+// Store documents with metadata
+$vectorDB->storeDocumentsBatch([
+    new Document('go', 'Go is a fast compiled language', ['category' => 'backend', 'year' => 2009]),
+    new Document('php', 'PHP is a flexible language', ['category' => 'backend', 'year' => 1995]),
+]);
+
+// Search with filters
+$results = $vectorDB->searchDocuments(new DocumentSearch(
+    query: 'fast programming language',
+    topK: 3,
+    filters: [
+        new Filter('category', FilterOp::Eq, 'backend'),
+    ]
+));
+
+// Range filter example
+$results = $vectorDB->searchDocuments(new DocumentSearch(
+    query: 'programming language',
+    topK: 3,
+    filters: [
+        new Filter('year', FilterOp::Range, new NumericRange(2000, 2010)),
+    ]
+));
+```
+
+**Filter Operators:**
+- `FilterOp::Eq` - Exact tag match
+- `FilterOp::In` - Match any in list (array value)
+- `FilterOp::Contains` - Text contains
+- `FilterOp::Range` - Numeric range (use `NumericRange`)
+- `FilterOp::Gte` - Greater than or equal
+- `FilterOp::Lte` - Less than or equal
+
+**Field Types:**
+- `FilterFieldType::Tag` - Exact match (categories, tags)
+- `FilterFieldType::Text` - Full-text search
+- `FilterFieldType::Numeric` - Numeric range queries
+
 ## Examples
 
 See the `examples/` directory for complete working examples:
@@ -339,6 +398,7 @@ See the `examples/` directory for complete working examples:
 - `examples/test_without_api.php` - Test all features without API calls (recommended first)
 - `examples/weather_example.php` - Full weather tool example with OpenAI API
 - `examples/langfuse_tracing_example.php` - Complete example with Langfuse tracing
+- `examples/vector_search_example.php` - Vector search with filtering
 
 Run the non-API example to see all features in action:
 ```bash
