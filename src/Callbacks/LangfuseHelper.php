@@ -25,8 +25,7 @@ class LangfuseHelper
         ?string $publicKey = null,
         ?string $secretKey = null,
         string  $endpoint = 'https://cloud.langfuse.com/api/public/otel/v1/traces'
-    ): TracerProviderInterface
-    {
+    ): TracerProviderInterface {
         // Get keys from parameters or environment
         $publicKey = $publicKey ?? getenv('LANGFUSE_PUBLIC_KEY');
         $secretKey = $secretKey ?? getenv('LANGFUSE_SECRET_KEY');

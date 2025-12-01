@@ -399,6 +399,7 @@ See the `examples/` directory for complete working examples:
 - `examples/weather_example.php` - Full weather tool example with OpenAI API
 - `examples/langfuse_tracing_example.php` - Complete example with Langfuse tracing
 - `examples/vector_search_example.php` - Vector search with filtering
+- `examples/image_input.php` - Image analysis with vision capabilities
 
 Run the non-API example to see all features in action:
 ```bash
@@ -411,6 +412,83 @@ export LANGFUSE_PUBLIC_KEY="pk-..."
 export LANGFUSE_SECRET_KEY="sk-..."
 php examples/langfuse_tracing_example.php
 ```
+
+### Image Analysis with Vision
+
+The agent supports vision capabilities for image analysis. You can pass images to the agent in multiple ways:
+
+**Example 1: Base64 Encoded Image**
+```php
+$agent = create_agent($openai);
+
+$base64Image = "data:image/png;base64,iVBORw0KGgoAAAANS...";
+
+$response = $agent->run([
+    ['role' => 'user', 'content' => [
+        [
+            'type' => 'text',
+            'text' => 'Describe this image in detail.'
+        ],
+        [
+            'type' => 'image_url',
+            'image_url' => ['url' => $base64Image]
+        ]
+    ]],
+]);
+
+echo $response;
+```
+
+**Example 2: Image from URL**
+```php
+$response = $agent->run([
+    ['role' => 'user', 'content' => [
+        [
+            'type' => 'text',
+            'text' => 'What is in this image?'
+        ],
+        [
+            'type' => 'image_url',
+            'image_url' => [
+                'url' => 'https://example.com/image.png'
+            ]
+        ]
+    ]],
+]);
+
+echo $response;
+```
+
+**Example 3: Local File to Base64**
+```php
+// Load local image and convert to base64
+$imagePath = '/path/to/image.png';
+$imageData = file_get_contents($imagePath);
+$base64Image = 'data:image/png;base64,' . base64_encode($imageData);
+
+$response = $agent->run([
+    ['role' => 'user', 'content' => [
+        [
+            'type' => 'text',
+            'text' => 'Analyze this image.'
+        ],
+        [
+            'type' => 'image_url',
+            'image_url' => ['url' => $base64Image]
+        ]
+    ]],
+]);
+
+echo $response;
+```
+
+**Supported Image Formats:**
+- PNG
+- JPG/JPEG
+- GIF
+- WebP
+
+See `examples/image_input.php` for complete working examples with all three approaches.
 
 ## Architecture
 

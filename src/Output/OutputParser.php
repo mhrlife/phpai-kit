@@ -20,7 +20,7 @@ class OutputParser
     public static function parse(?string $content, string $className): object
     {
         if ($content === null) {
-            throw new AgentException("Cannot parse null content");
+            throw new AgentException('Cannot parse null content');
         }
 
         if (!class_exists($className)) {
@@ -42,7 +42,7 @@ class OutputParser
 
 
         if ($data === null || !is_array($data)) {
-            throw new AgentException("Could not parse output as JSON");
+            throw new AgentException('Could not parse output as JSON');
         }
 
         // Create instance and populate

@@ -46,7 +46,8 @@ class LangfuseTransportWrapper implements TransportInterface
                 }
 
                 throw $e;
-            });
+            })
+        ;
     }
 
     public function shutdown(?CancellationInterface $cancellation = null): bool

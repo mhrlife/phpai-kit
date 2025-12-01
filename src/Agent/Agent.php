@@ -31,8 +31,7 @@ class Agent
         private readonly ToolRegistry $registry,
         private readonly string       $model = 'gpt-4o',
         private readonly ?string      $outputClass = null
-    )
-    {
+    ) {
         $this->executor = new ToolExecutor($registry);
     }
 
@@ -70,7 +69,7 @@ class Agent
 
                 $systemMessage = [
                     'role' => 'system',
-                    'content' => "After you complete all tool calls and have the final answer, you MUST respond with a valid JSON object matching this exact schema:\n\n{$schemaJson}\n\nDo not include any other text, only the JSON object."
+                    'content' => "After you complete all tool calls and have the final answer, you MUST respond with a valid JSON object matching this exact schema:\n\n{$schemaJson}\n\nDo not include any other text, only the JSON object.",
                 ];
 
                 array_unshift($this->messages, $systemMessage);
@@ -119,11 +118,12 @@ class Agent
 
                 // Make API call
                 $response = $this->client->chat()
-                    ->create($params);
+                    ->create($params)
+                ;
 
                 $choice = $response->choices[0] ?? null;
                 if ($choice === null) {
-                    throw new AgentException("No response from OpenAI");
+                    throw new AgentException('No response from OpenAI');
                 }
 
                 $finishReason = $choice->finishReason;
@@ -165,7 +165,7 @@ class Agent
                         $arguments = json_decode($toolCall->function->arguments, true);
 
                         if ($arguments === null) {
-                            throw new AgentException("Invalid tool call arguments JSON");
+                            throw new AgentException('Invalid tool call arguments JSON');
                         }
 
                         // Trigger onToolCallStart callback

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Mhrlife\PhpaiKit\Schema;
 
+use ReflectionEnum;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
 use ReflectionType;
 use ReflectionUnionType;
-use ReflectionEnum;
 
 class TypeMapper
 {
@@ -124,18 +124,18 @@ class TypeMapper
             $backingType = $reflection->getBackingType();
             if ($backingType === null) {
                 // Pure enum - extract case names
-                $values = array_map(fn($case) => $case->getName(), $cases);
+                $values = array_map(fn ($case) => $case->getName(), $cases);
                 return ['type' => 'string', 'enum' => $values];
             }
 
             $backingTypeName = $backingType->getName();
             if ($backingTypeName === 'string') {
-                $values = array_map(fn($case) => $case->getBackingValue(), $cases);
+                $values = array_map(fn ($case) => $case->getBackingValue(), $cases);
                 return ['type' => 'string', 'enum' => $values];
             }
 
             if ($backingTypeName === 'int') {
-                $values = array_map(fn($case) => $case->getBackingValue(), $cases);
+                $values = array_map(fn ($case) => $case->getBackingValue(), $cases);
                 return ['type' => 'integer', 'enum' => $values];
             }
 
@@ -184,7 +184,7 @@ class TypeMapper
         // Handle union types (string|int)
         if (str_contains($typeString, '|')) {
             $types = explode('|', $typeString);
-            $schemas = array_map(fn($t) => self::parseTypeString(trim($t)), $types);
+            $schemas = array_map(fn ($t) => self::parseTypeString(trim($t)), $types);
 
             $hasNull = false;
             $nonNullSchemas = [];

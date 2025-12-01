@@ -30,7 +30,7 @@ class ToolRegistry
         // Get Tool attribute
         $attributes = $reflection->getAttributes(Tool::class);
         if (empty($attributes)) {
-            throw new ToolException("Function must have #[Tool] attribute");
+            throw new ToolException('Function must have #[Tool] attribute');
         }
 
         /** @var Tool $tool */
@@ -39,19 +39,19 @@ class ToolRegistry
         // Get parameter type from function signature
         $parameters = $reflection->getParameters();
         if (count($parameters) !== 1) {
-            throw new ToolException("Tool function must have exactly one parameter");
+            throw new ToolException('Tool function must have exactly one parameter');
         }
 
         $param = $parameters[0];
         $paramType = $param->getType();
 
         if ($paramType === null) {
-            throw new ToolException("Tool function parameter must have a type hint");
+            throw new ToolException('Tool function parameter must have a type hint');
         }
 
         $typeName = method_exists($paramType, 'getName') ? $paramType->getName() : null;
         if ($typeName === null || !class_exists($typeName)) {
-            throw new ToolException("Tool function parameter must be a class type");
+            throw new ToolException('Tool function parameter must be a class type');
         }
 
         // Generate JSON Schema from parameter class
@@ -113,7 +113,7 @@ class ToolRegistry
     public function toOpenAIFormat(): array
     {
         return array_map(
-            fn(ToolDefinition $tool) => $tool->toOpenAIFormat(),
+            fn (ToolDefinition $tool) => $tool->toOpenAIFormat(),
             array_values($this->tools)
         );
     }

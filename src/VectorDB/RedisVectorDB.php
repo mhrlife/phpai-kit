@@ -7,10 +7,10 @@ namespace Mhrlife\PhpaiKit\VectorDB;
 use Mhrlife\PhpaiKit\Embedding\Client as EmbeddingClient;
 use Predis\Client as PredisClient;
 use Predis\Command\Argument\Search\CreateArguments;
-use Predis\Command\Argument\Search\SearchArguments;
-use Predis\Command\Argument\Search\SchemaFields\TextField;
 use Predis\Command\Argument\Search\SchemaFields\TagField;
+use Predis\Command\Argument\Search\SchemaFields\TextField;
 use Predis\Command\Argument\Search\SchemaFields\VectorField;
+use Predis\Command\Argument\Search\SearchArguments;
 
 /**
  * Redis-based vector database implementation using Predis and RediSearch
@@ -68,9 +68,9 @@ class RedisVectorDB implements Client
                 [
                     'TYPE', 'FLOAT32',
                     'DIM', $config->dimensions,
-                    'DISTANCE_METRIC', $config->distanceMetric
+                    'DISTANCE_METRIC', $config->distanceMetric,
                 ]
-            )
+            ),
         ];
 
         // Add filterable fields to schema
@@ -120,7 +120,7 @@ class RedisVectorDB implements Client
         }
 
         // Extract all content for batch embedding
-        $contents = array_map(fn(Document $doc) => $doc->content, $docs);
+        $contents = array_map(fn (Document $doc) => $doc->content, $docs);
 
         // Get embeddings for all documents
         $embeddings = $this->embedClient->embedTexts($contents);
@@ -335,7 +335,7 @@ class RedisVectorDB implements Client
                 case FilterOp::In:
                     // Tag in list: @field:{val1|val2|val3}
                     if (is_array($filter->value)) {
-                        $escaped = array_map(fn($v) => $this->escapeTagValue($v), $filter->value);
+                        $escaped = array_map(fn ($v) => $this->escapeTagValue($v), $filter->value);
                         $part = sprintf('@%s:{%s}', $fieldName, implode('|', $escaped));
                     }
                     break;

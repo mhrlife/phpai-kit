@@ -32,5 +32,6 @@ function create_agent(
         ->withModel($model)
         ->withTools($tools)
         ->withOutput($output)
-        ->build();
+        ->build()
+    ;
 }

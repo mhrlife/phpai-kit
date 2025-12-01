@@ -54,19 +54,19 @@ class ToolExecutor
         $parameters = $reflection->getParameters();
 
         if (empty($parameters)) {
-            throw new ToolException("Tool function has no parameters");
+            throw new ToolException('Tool function has no parameters');
         }
 
         $param = $parameters[0];
         $paramType = $param->getType();
 
         if ($paramType === null) {
-            throw new ToolException("Tool parameter has no type");
+            throw new ToolException('Tool parameter has no type');
         }
 
         $className = method_exists($paramType, 'getName') ? $paramType->getName() : null;
         if ($className === null || !class_exists($className)) {
-            throw new ToolException("Tool parameter type is not a valid class");
+            throw new ToolException('Tool parameter type is not a valid class');
         }
 
         // Create instance and populate properties

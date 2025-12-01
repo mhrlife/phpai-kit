@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Mhrlife\PhpaiKit\Callbacks;
 
+use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
-use OpenTelemetry\SDK\Trace\TracerProviderInterface;
-use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\Context\ScopeInterface;
+use OpenTelemetry\SDK\Trace\TracerProviderInterface;
 
 /**
  * Manages OpenTelemetry spans with proper hierarchy and context handling.
@@ -35,7 +35,8 @@ class SpanManager
         // Create span - it will automatically use current context (which has current span)
         $span = $tracer->spanBuilder($name)
             ->setSpanKind($kind)
-            ->startSpan();
+            ->startSpan()
+        ;
 
         // Activate the span to make it current - this is the KEY!
         $scope = $span->activate();
